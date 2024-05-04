@@ -1,0 +1,83 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cube Map SkyBox</title>
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+          }
+        }
+      </script>
+      <link rel="stylesheet" href="default.css">
+      <script type="module">
+        import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js' ;
+import Stats from 'three/addons/libs/stats.module'
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize( window.innerWidth, window.innerHeight );
+document.body.appendChild( renderer.domElement );
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+
+const controls = new OrbitControls( camera, renderer.domElement );
+camera.position.set( -7, 10, 15 );
+controls.update();
+
+const axesHelper = new THREE.AxesHelper( 10, 10 );
+scene.add( axesHelper );
+const box = new THREE.Mesh(
+    new THREE.BoxGeometry(5, 5, 5),
+    new THREE.MeshStandardMaterial({roughness: 1, metalness: 0, color:"gold"})) ;
+scene.add( box );
+
+// You need a light as the cube does not provide environment lighting 
+const light = new THREE.PointLight( 0xffffff, 1000, 100);
+light.position.set(10,10,10);
+scene.add( light );
+
+// Load a cross cube map
+const loader = new THREE.TextureLoader();
+loader.load(
+	'cubemap.jpg',
+	function ( texture ) {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const cube = new THREE.Mesh(
+            new THREE.BoxGeometry(1000,1000,1000),
+            new THREE.MeshBasicMaterial({ map : texture, side:THREE.BackSide })
+        )
+        // update cube UV so they map the skybox onto the cube
+        var uv = cube.geometry.attributes.uv;
+        const sx = 1 / 4.0 ; // 4 images across
+        const sy = 1 / 3.0 ; // 3 images down 
+        uv.setXY(0, sx*3, sy*2); uv.setXY(1, sx*2,sy*2); uv.setXY(2, sx*3,sy*1); uv.setXY(3, sx*2,sy*1); // Right
+        uv.setXY(4, sx*1, sy*2); uv.setXY(5, sx*0,sy*2); uv.setXY(6, sx*1,sy*1); uv.setXY(7, sx*0,sy*1); // Left
+        uv.setXY(8, sx*1, sy*2); uv.setXY(9, sx*2,sy*2); uv.setXY(10, sx*1,sy*3); uv.setXY(11, sx*2,sy*3); // Top
+        uv.setXY(12, sx*1, sy*0); uv.setXY(13, sx*2,sy*0); uv.setXY(14, sx*1,sy*1); uv.setXY(15, sx*2,sy*1); // Bottom
+        uv.setXY(16, sx*4, sy*2); uv.setXY(17, sx*3,sy*2); uv.setXY(18, sx*4,sy*1); uv.setXY(19, sx*3,sy*1); // Back
+        uv.setXY(20, sx*2, sy*2); uv.setXY(21, sx*1,sy*2); uv.setXY(22, sx*2,sy*1); uv.setXY(23, sx*1,sy*1); // Front
+        scene.add(cube);
+	}
+)
+
+const stats = new Stats()
+document.body.appendChild(stats.dom)
+
+function animate() {
+	requestAnimationFrame( animate );
+	controls.update();
+	renderer.render( scene, camera );
+  stats.update();
+}
+animate()
+      </script>  
+</head>
+<body>
+</body>
+<pre id="pos"></pre>
+</html>
